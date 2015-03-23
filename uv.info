@@ -1,0 +1,10 @@
+name = uv
+description = A simple, unviews module for listing things.
+core = 7.x
+
+dependencies[] = node
+dependencies[] = entity
+
+files[] = uv.display.inc
+files[] = includes/nodeuv.inc
+files[] = displays/table.inc

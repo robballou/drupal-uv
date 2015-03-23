@@ -1,0 +1,102 @@
+<?php
+/**
+ * @file
+ * uv functionality
+ */
+class UV {
+  public $displays = array();
+  public $results = NULL;
+
+  /**
+   * Constructor
+   */
+  public function __construct() {
+    $this->query = new EntityFieldQuery();
+    return $this;
+  }
+
+  /**
+   * Display the results.
+   *
+   * This method is not chainable.
+   *
+   * @param string $type
+   *   A display type.
+   * @param array $options
+   *   Display options array.
+   */
+  public function display($type, array $options = array()) {
+    $this->loadDisplays();
+
+    if (isset($this->displays[$type])) {
+      require $this->displays[$type]['path'];
+      $class = $this->displays[$type]['class'];
+      $this_display = new $class($this, $options);
+      return $this_display;
+    }
+  }
+
+  public function getResults() {
+    if ($this->results === NULL) {
+      $results = $this->query->execute();
+      if (empty($results)) {
+        $this->results = FALSE;
+        return $this;
+      }
+
+      $this->results = $results;
+    }
+    return $this;
+  }
+
+  /**
+   * Check if this UV has results.
+   *
+   * This method is not chainable.
+   */
+  public function hasResults() {
+    $this->getResults();
+
+    return !empty($this->results);
+  }
+
+  /**
+   * Load displays available.
+   */
+  public function loadDisplays() {
+    if (!$this->displays) {
+      $path = drupal_get_path('module', 'uv');
+      $displays_path = $path . '/displays';
+      $dir = dir($displays_path);
+      while (FALSE !== ($entry = $dir->read())) {
+        // ignore hidden items
+        if (mb_substr($entry, 0, 1) === '.') {
+          continue;
+        }
+
+        // ignore non .inc items
+        if (mb_substr($entry, -4) !== '.inc') {
+          continue;
+        }
+
+        $entry_name = str_replace('.inc', '', $entry);
+        $display_class = 'UV' . ucfirst($entry_name) . 'Display';
+        $this->displays[$entry_name] = array(
+          'class' => $display_class,
+          'path' => $displays_path . '/' . $entry,
+        );
+      }
+    }
+  }
+
+  /**
+   * Set the query
+   */
+  public function setQuery($query) {
+    $this->query = $query;
+
+    if ($query instanceof EntityFieldQuery) {
+      $this->queryType = 'efq';
+    }
+  }
+}
